@@ -1,0 +1,7 @@
+name = "DavidsFMM3DBIE"
+uuid = "a605821a-dd2a-4a50-9744-ebcb664eb958"
+authors = ["David Stein <dstein@flatironinstitute.org>"]
+version = "0.0.1"
+
+[compat]
+julia = "1.10"
