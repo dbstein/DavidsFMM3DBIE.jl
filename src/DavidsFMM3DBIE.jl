@@ -4,6 +4,9 @@ using Bijections
 using LinearAlgebra
 using StaticArrays
 
+include("utils/utils.jl")
+export xyz2v, v2xyz, Flat2SVector, SVector2Flat
+
 include("geometries/GenericGeometries.jl")
 export GenericGeometry, PrecomputedGeometry
 export get_npts

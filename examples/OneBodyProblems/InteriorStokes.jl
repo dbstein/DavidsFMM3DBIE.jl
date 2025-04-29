@@ -18,12 +18,15 @@ This example does not use any close-evaluation, it
     and geometry objects
 """
 
-function Ufunc(X::SVector{3, T}) where T
-    x, y, z = X[1], X[2], X[3]
-    return SVector{3,T}(2x + y^2, z - y, x - z)
+function 𝐮func(𝐱::SVector{3, T}) where T
+    x, y, z = v2xyz(𝐱)
+    return xyz2v(2x + y^2, z - y, x - z)
 end
 # not tested or used at this stage
-Pfunc(X::T) where T = -2X + one(T)
+function pfunc(𝐱::SVector{3, T}) where T
+    x, y, z = v2xyz(𝐱)
+    return xyz2v(-2x, zero(x), zero(x))
+end
 
 # discretize sphere
 h = 0.25
@@ -44,25 +47,26 @@ sphereWeights = getNaiveQuad(sphere);
 StokesSingularMat = StokesCombinedFieldLayerPotential(sphere, 0.0, 1.0, true, ε);
 
 # generate some boundary conditions
-BoundaryU = Ufunc.(sphereCoordinates);
-FlatBoundaryU = copy(reinterpret(Float64, BoundaryU));
+𝐮Γ = 𝐮func.(sphereCoordinates);
+𝐮Γflat = copy(SVector2Flat(𝐮Γ)); # copy is because gmres doesn't like reinterpret arrays
 
 # solve for the density
-out = gmres(StokesSingularMat, FlatBoundaryU; atol=ε, verbose=2);
-σ = reinterpret(SVector{3,Float64}, out[1]);
+gmres_out = gmres(StokesSingularMat, 𝐮Γflat; atol=ε, verbose=2);
+𝛔flat = gmres_out[1];
+𝛔 = Flat2SVector(𝛔flat);
 
 # now we need to evaluate this at some points
 
-Uest = StokesKernel(
+𝐮e = StokesKernel(
     sphereCoordinates;
     targets=TestPoints,
-    stresslets=σ.*sphereWeights,
+    stresslets=𝛔.*sphereWeights,
     stressvecs=sphereNormals,
 );
-Utrue = Ufunc.(TestPoints);
+𝐮a = 𝐮func.(TestPoints);
 # why am I off by a (-) sign???
-Utrue = -Utrue;
+𝐮a = -𝐮a;
 
-error = norm(Uest - Utrue, Inf)/norm(Utrue, Inf);
+error = norm(𝐮e - 𝐮a, Inf)/norm(𝐮a, Inf);
 
 @printf "Relative error: %0.2e\n" error
